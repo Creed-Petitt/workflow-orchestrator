@@ -1,5 +1,6 @@
 package com.creedpetitt.workersdk;
 
-public class Handler {
-
+@FunctionalInterface
+public interface Handler {
+    String handle(String payload);
 }
