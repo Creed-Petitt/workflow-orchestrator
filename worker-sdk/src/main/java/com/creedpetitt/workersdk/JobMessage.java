@@ -1,5 +1,7 @@
 package com.creedpetitt.workersdk;
 
-public class JobMessage {
-
-}
+public record JobMessage(
+        String workflowRunId,
+        String action,
+        String payload
+) {}
