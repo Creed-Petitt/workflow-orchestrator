@@ -1,8 +1,10 @@
 package com.creedpetitt.workersdk;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -22,10 +24,43 @@ public class Worker {
 
     public void start() {
 
-        // Init
+        // Init consumer and producer
         this.consumer = new KafkaConsumer<>(getConsumerProps());
         this.producer = new KafkaProducer<>(getProducerProps());
 
+        consumer.subscribe(Collections.singleton("workflow-jobs"));
+
+        System.out.println("Workflow started, listening for jobs...");
+
+        while (true) {
+            var records = consumer.poll(Duration.ofMillis(100));
+
+            for (ConsumerRecord<String, String> record : records) {
+                JobMessage msg = deserializeJob(record.value());
+
+                System.out.println("Received job: " + msg);
+
+                Handler handler = handlers.get(msg.action());
+                if (handler == null) {
+                    System.err.println("No handler for " + msg.action());
+                    continue;
+                }
+
+                String output;
+                try {
+                    output = handler.handle(msg.payload());
+                } catch (Exception e) {
+                    output = "{\"error\":\"" + e.getMessage() + "\"}";
+                }
+
+                ResultMessage res =
+                        new ResultMessage(msg.workflowRunId(), msg.action(), output);
+
+                producer.send(
+                        new ProducerRecord<>("workflow-results", serializeResult(res))
+                );
+            }
+        }
     }
 
     // Serialize/deserialize helper methods
@@ -46,7 +81,6 @@ public class Worker {
     }
 
     // Kafka consumer/producer properties
-
     private Properties getConsumerProps() {
         Properties consumerProps = new Properties();
         consumerProps.put("bootstrap.servers", "localhost:9092");
@@ -70,8 +104,6 @@ public class Worker {
 
         return producerProps;
     }
-
-
 }
 
 
