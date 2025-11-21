@@ -14,6 +14,7 @@ import java.util.Properties;
 
 public class Worker {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private final Map<String, Handler> handlers = new HashMap<>();
     private KafkaConsumer<String, String> consumer;
     private KafkaProducer<String, String> producer;
@@ -66,7 +67,7 @@ public class Worker {
     // Serialize/deserialize helper methods
     private String serializeResult(ResultMessage result) {
         try {
-            return new ObjectMapper().writeValueAsString(result);
+            return MAPPER.writeValueAsString(result);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -74,7 +75,7 @@ public class Worker {
 
     private JobMessage deserializeJob(String json) {
         try {
-            return new ObjectMapper().readValue(json, JobMessage.class);
+            return MAPPER.readValue(json, JobMessage.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -83,7 +84,7 @@ public class Worker {
     // Kafka consumer/producer properties
     private Properties getConsumerProps() {
         Properties consumerProps = new Properties();
-        consumerProps.put("bootstrap.servers", "localhost:9092");
+        consumerProps.put("bootstrap.servers", "kafka:9092");
         consumerProps.put("key.deserializer",
                 "org.apache.kafka.common.serialization.StringDeserializer");
         consumerProps.put("value.deserializer",
@@ -96,7 +97,7 @@ public class Worker {
 
     private Properties getProducerProps() {
         Properties producerProps = new Properties();
-        producerProps.put("bootstrap.servers", "localhost:9092");
+        producerProps.put("bootstrap.servers", "kafka:9092");
         producerProps.put("key.serializer",
                 "org.apache.kafka.common.serialization.StringSerializer");
         producerProps.put("value.serializer",
