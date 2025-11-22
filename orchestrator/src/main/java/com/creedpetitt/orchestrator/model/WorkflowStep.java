@@ -9,7 +9,7 @@ import lombok.Data;
 public class WorkflowStep {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column
@@ -17,5 +17,9 @@ public class WorkflowStep {
 
     @Column
     private int stepIndex;
+
+    @ManyToOne
+    @JoinColumn(name = "workflow_definition_id")
+    private WorkflowDefinition workflowDefinition;
 
 }

@@ -3,6 +3,7 @@ package com.creedpetitt.orchestrator.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -13,6 +14,6 @@ public class WorkflowDefinition {
     @Id
     private String id;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    private List<WorkflowStep> steps;
+    @OneToMany(mappedBy = "workflow-defintion", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<WorkflowStep> steps = new ArrayList<>();
 }
