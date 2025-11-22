@@ -7,7 +7,8 @@ import com.creedpetitt.orchestrator.service.WorkflowService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@RestController("/workflow")
+@RestController
+@RequestMapping("/workflow")
 public class WorkflowController {
 
     private final WorkflowService workflowService;
@@ -24,7 +25,7 @@ public class WorkflowController {
 
     @PostMapping("/{id}/trigger")
     public ResponseEntity<String> triggerWorkflow(@PathVariable String id, @RequestBody TriggerWorkflowRequest req) {
-        String runId = workflowService.triggerWorflow(id, req);
+        String runId = workflowService.triggerWorkflow(id, req);
         return ResponseEntity.ok(runId);
     }
 
