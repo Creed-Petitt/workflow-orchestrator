@@ -14,6 +14,6 @@ public class WorkflowDefinition {
     @Id
     private String id;
 
-    @OneToMany(mappedBy = "workflowDefinition", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "workflowDefinition", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<WorkflowStep> steps = new ArrayList<>();
 }
