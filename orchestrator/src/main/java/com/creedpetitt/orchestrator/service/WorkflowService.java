@@ -5,10 +5,12 @@ import com.creedpetitt.orchestrator.dto.CreateWorkflowRequest;
 import com.creedpetitt.orchestrator.dto.ResultMessage;
 import com.creedpetitt.orchestrator.dto.TriggerWorkflowRequest;
 import com.creedpetitt.orchestrator.dto.JobMessage;
+import com.creedpetitt.orchestrator.model.StepResult;
 import com.creedpetitt.orchestrator.model.WorkflowDefinition;
 import com.creedpetitt.orchestrator.model.WorkflowRun;
 import com.creedpetitt.orchestrator.model.WorkflowStep;
 import com.creedpetitt.orchestrator.repository.WorkflowDefinitionRepository;
+import com.creedpetitt.orchestrator.repository.WorkflowRunRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -16,6 +18,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,17 +26,19 @@ import java.util.UUID;
 public class WorkflowService {
 
     private final WorkflowDefinitionRepository workflowRepo;
+    private final WorkflowRunRepository workflowRunRepo;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
 
     public WorkflowService(
-        WorkflowDefinitionRepository workflowRepo,
-        KafkaTemplate<String, String> kafkaTemplate,
-        RedisTemplate<String, String> redisTemplate,
-        ObjectMapper objectMapper
+            WorkflowDefinitionRepository workflowRepo, WorkflowRunRepository workflowRunRepo,
+            KafkaTemplate<String, String> kafkaTemplate,
+            RedisTemplate<String, String> redisTemplate,
+            ObjectMapper objectMapper
     ) {
         this.workflowRepo = workflowRepo;
+        this.workflowRunRepo = workflowRunRepo;
         this.kafkaTemplate = kafkaTemplate;
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
@@ -72,6 +77,8 @@ public class WorkflowService {
         run.setWorkflowId(id);
         run.setCurrentStep(0);
         run.setStatus("RUNNING");
+        run.setStartTime(LocalDateTime.now());
+        run.setInput(req.input());
 
         String key = "workflow:run:" + runId;
         try {
@@ -144,8 +151,19 @@ public class WorkflowService {
 
         int totalSteps =  workflow.getSteps().size();
 
+        StepResult stepResult = new StepResult();
+        stepResult.setWorkflowRun(run);
+        stepResult.setAction(result.action());
+        stepResult.setStepIndex(run.getCurrentStep());
+        stepResult.setResult(result.result());
+        stepResult.setTimestamp(LocalDateTime.now());
+        run.getStepResults().add(stepResult);
+
         if (run.getCurrentStep() >=  totalSteps - 1) {
             run.setStatus("COMPLETE");
+            run.setEndTime(LocalDateTime.now());
+            run.setFinalOutput(result.result());
+            workflowRunRepo.save(run);
 
             try {
                 String updatedJson =  objectMapper.writeValueAsString(run);
