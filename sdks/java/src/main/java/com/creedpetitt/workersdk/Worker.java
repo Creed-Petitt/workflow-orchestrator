@@ -18,12 +18,19 @@ public class Worker {
     private final Map<String, Handler> handlers = new HashMap<>();
     private KafkaConsumer<String, String> consumer;
     private KafkaProducer<String, String> producer;
+    private String bootstrapServers;
 
     public void register(String action, Handler handler) {
         handlers.put(action, handler);
     }
 
     public void start() {
+        start("kafka:9092");
+    }
+
+    public void start(String bootstrapServers) {
+
+        this.bootstrapServers = bootstrapServers;
 
         // Init consumer and producer
         this.consumer = new KafkaConsumer<>(getConsumerProps());
@@ -84,7 +91,7 @@ public class Worker {
     // Kafka consumer/producer properties
     private Properties getConsumerProps() {
         Properties consumerProps = new Properties();
-        consumerProps.put("bootstrap.servers", "kafka:9092");
+        consumerProps.put("bootstrap.servers", bootstrapServers);
         consumerProps.put("key.deserializer",
                 "org.apache.kafka.common.serialization.StringDeserializer");
         consumerProps.put("value.deserializer",
@@ -97,7 +104,7 @@ public class Worker {
 
     private Properties getProducerProps() {
         Properties producerProps = new Properties();
-        producerProps.put("bootstrap.servers", "kafka:9092");
+        producerProps.put("bootstrap.servers", bootstrapServers);
         producerProps.put("key.serializer",
                 "org.apache.kafka.common.serialization.StringSerializer");
         producerProps.put("value.serializer",
@@ -106,5 +113,3 @@ public class Worker {
         return producerProps;
     }
 }
-
-
