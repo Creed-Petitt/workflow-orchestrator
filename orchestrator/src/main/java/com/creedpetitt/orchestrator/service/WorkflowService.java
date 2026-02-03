@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -65,12 +67,26 @@ public class WorkflowService {
         return workflow.getId();
     }
 
-    public String triggerWorkflow(String id, TriggerWorkflowRequest req) {
+    public String triggerWorkflow(String id, TriggerWorkflowRequest req, String idempotencyKey) {
+
+        // Idempotency Check
+        if (idempotencyKey != null && !idempotencyKey.isEmpty()) {
+            String existingRunId = redisTemplate.opsForValue().get("idempotency:" + idempotencyKey);
+            if (existingRunId != null) {
+                System.out.println("Idempotency hit for key: " + idempotencyKey);
+                return existingRunId;
+            }
+        }
 
         WorkflowDefinition workflow = workflowRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Workflow not found" + id));
 
         String runId = UUID.randomUUID().toString();
+
+        // Save Idempotency Key (if present)
+        if (idempotencyKey != null && !idempotencyKey.isEmpty()) {
+            redisTemplate.opsForValue().set("idempotency:" + idempotencyKey, runId, Duration.ofHours(24));
+        }
 
         WorkflowRun run = new WorkflowRun();
         run.setRunId(runId);
@@ -100,6 +116,15 @@ public class WorkflowService {
         }
 
         return runId;
+    }
+
+    public List<WorkflowDefinition> getAllWorkflows() {
+        return workflowRepo.findAll();
+    }
+
+    public List<WorkflowRun> getAllRuns() {
+        // Retrieve most recent runs first
+        return workflowRunRepo.findAllByOrderByStartTimeDesc();
     }
 
     public WorkflowRun getRunStatus(String runId) {
