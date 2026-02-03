@@ -16,13 +16,13 @@ export class Worker {
         this.handlers.set(action, handler);
     };
 
-    async start(bootstrapServers : string = "kafka:9092") : Promise<void> {
+    async start(bootstrapServers : string = "kafka:9092", groupId: string = "workflow-workers") : Promise<void> {
         const kafka = new Kafka({
             clientId: 'workflow-worker',
             brokers: [bootstrapServers]
         });
 
-        this.consumer = kafka.consumer({groupId: 'workflow-workers'});
+        this.consumer = kafka.consumer({groupId: groupId});
         this.producer = kafka.producer();
 
         for (let attempt = 0; attempt < 30; attempt++) {
