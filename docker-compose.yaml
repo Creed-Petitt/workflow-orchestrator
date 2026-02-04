@@ -55,7 +55,7 @@ services:
       - redis:/data
 
   orchestrator:
-    build: ../orchestrator
+    build: ./orchestrator
     container_name: orchestrator
     hostname: orchestrator
     ports:
@@ -76,7 +76,7 @@ services:
         condition: service_started
 
   example-worker-java:
-    build: ../examples/java
+    build: ./examples/java
     container_name: example-worker-java
     hostname: example-worker-java
     profiles:
@@ -88,7 +88,7 @@ services:
 
   example-worker-python:
     build:
-      context: ..
+      context: .
       dockerfile: examples/python/Dockerfile
     container_name: example-worker-python
     hostname: example-worker-python
@@ -101,7 +101,7 @@ services:
 
   example-worker-node:
     build:
-      context: ..
+      context: .
       dockerfile: examples/node/Dockerfile
     container_name: example-worker-node
     hostname: example-worker-node
