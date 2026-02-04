@@ -10,4 +10,4 @@ worker.register('step2', (payload: string) => {
     return `step2-result: finished with ${payload}`;
 });
 
-worker.start();
+worker.start('kafka:9092', 'workflow-workers-node');
